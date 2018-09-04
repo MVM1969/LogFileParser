@@ -157,45 +157,62 @@ public class Parser {
 	}
 
 	/*
+	 * This method gets the parameters out of the command line that are then used to
+	 * parse a log file and process its results
+	 *
+	 * arg[0] - path to Access Log file arg[1] - parsing start date arg[2] -
+	 * duration - String representing amount of time to parse. arg[3] - threshold -
+	 * number of records not to be exceeded else Blocked Request.
+	 */
+
+	public static Error parseAndSave(String args[]) {
+		try {
+			String fileName = args[0];
+			String start = args[1];
+			String duration = args[2];
+			if (duration.equalsIgnoreCase("HOURLY") || (duration.equalsIgnoreCase("DAILY"))) {
+				try {
+					int threshold = Integer.parseInt(args[3]);
+					Date startDate = new Date();
+
+					startDate = argDateFormatter.parse(start);
+					List<LogEntry> entries = parseFile(fileName);
+					if (entries.size() == 0) {
+						return Error.INVALID_ACCESS_LOG;
+					} else {
+						Database.insertLogEntry(entries);
+						List<BlockedRequest> thresholdIPs = findIPs(entries, startDate, duration, threshold);
+						if (thresholdIPs.size() == 0) {
+							return Error.NO_BLOCKED_REQUESTS;
+						} else {
+							Database.insertBlockedRequest(thresholdIPs);
+							return Error.SUCCESS;
+						}
+					}
+				} catch (NumberFormatException nfe) {
+					nfe.printStackTrace();
+					return Error.INVALID_THRESHOLD;
+				} catch (ParseException pe) {
+					pe.printStackTrace();
+					return Error.INVALID_STARTDATE;
+				} catch (Exception e) {
+					e.printStackTrace();
+					return Error.ARGS;
+				}
+			} else
+				return Error.INVALID_DURATION;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Error.ARGS;
+		}
+	}
+
+	/*
 	 * arg[0] - path to Access Log file arg[1] - parsing start date arg[2] -
 	 * duration - either hourly or daily arg[3] - threshold - needs to be an int.
 	 */
 	public static void main(String args[]) {
-		String fileName = args[0];
-		String start = args[1];
-		String duration = args[2];
-		if (duration.equalsIgnoreCase("HOURLY") || (duration.equalsIgnoreCase("DAILY"))) {
-			try {
-				int threshold = Integer.parseInt(args[3]);
-				Date startDate = new Date();
-
-				startDate = argDateFormatter.parse(start);
-				List<LogEntry> entries = parseFile(fileName);
-				if (entries.size() == 0) {
-					System.out.println("There were no rows of data in the log file");
-
-				} else {
-					Database.insertLogEntry(entries);
-					List<BlockedRequest> thresholdIPs = findIPs(entries, startDate, duration, threshold);
-					if (thresholdIPs.size() == 0) {
-						System.out.println("There were no blocked requests for the given parameters");
-					} else {
-						Database.insertBlockedRequest(thresholdIPs);
-						System.out.println("Parsing Complete.");
-					}
-				}
-			} catch (NumberFormatException nfe) {
-				nfe.printStackTrace();
-				System.out.println("Error. Duration not a number.");
-			} catch (ParseException pe) {
-				pe.printStackTrace();
-				System.out.println("Error. Date not in yyyy-MM-dd.HH:mm:ss format");
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.out.println("Error.  Incomplete.");
-			}
-		} else
-			System.out.println("Invalid Duration. Can only be DAILY or HOURLY");
+		System.out.println(parseAndSave(args));
 
 	}
 }

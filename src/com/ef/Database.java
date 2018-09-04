@@ -115,8 +115,20 @@ public class Database {
 		return;
 	}
 
+	public static Connection closeConnection(Connection conn) {
+		try {
+			conn.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			conn = null;
+		}
+		return conn;
+	}
+
 	public static void main(String args[]) {
-		getConnection();
+		Connection conn = getConnection();
+		closeConnection(conn);
 	}
 
 }
