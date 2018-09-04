@@ -19,7 +19,7 @@ public class Database {
 	private static final String INSERT_LOG_ENTRY_SQL = "insert into LOG_ENTRY (LOG_DATE, IP_ADDRESS, REQUEST, STATUS, USER_AGENT) values (?,?,?,?,?)";
 	private static final String INSERT_BLOCKED_REQUEST_SQL = "insert into BLOCKED_REQUEST (START_DATE,END_DATE,IP_ADDRESS,DURATION,REQUESTS,REASON)"
 			+ " values (?,?,?,?,?,?)";
-	private static final int BATCH_SIZE = 1000;
+	private static final int BATCH_SIZE = 50;
 
 	public static Connection getConnection() {
 		Connection conn = null;
@@ -33,7 +33,6 @@ public class Database {
 			try {
 				conn.close();
 			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 
@@ -64,22 +63,13 @@ public class Database {
 				batch++;
 				count++;
 				if (batch > BATCH_SIZE) {
-					long start = System.currentTimeMillis();
-					System.out.println("inserting " + count + "  Started:" + start);
 					ps.executeBatch();
-					long end = System.currentTimeMillis();
-					System.out.println("end:" + end);
 					batch = 0;
 
 				}
 			}
-			long start = System.currentTimeMillis();
-			System.out.println("inserting " + logEntries.size() + "  Started:" + start);
 			int[] inserted = ps.executeBatch();
-			long end = System.currentTimeMillis();
-			System.out.println("end:" + end);
-			System.out.println("total time taken to insert the batch = " + (end - start) + " ms");
-			// System.out.println("total time taken = " + (end - start) / records + " s");
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 
@@ -113,22 +103,11 @@ public class Database {
 				batch++;
 				count++;
 				if (batch > BATCH_SIZE) {
-					long start = System.currentTimeMillis();
-					System.out.println("inserting " + count + "  Started:" + start);
 					ps.executeBatch();
-					long end = System.currentTimeMillis();
-					System.out.println("end:" + end);
 					batch = 0;
-
 				}
 			}
-			long start = System.currentTimeMillis();
-			System.out.println("inserting " + blockedRequests.size() + "  Started:" + start);
 			int[] inserted = ps.executeBatch();
-			long end = System.currentTimeMillis();
-			System.out.println("end:" + end);
-			System.out.println("total time taken to insert the batch = " + (end - start) + " ms");
-			// System.out.println("total time taken = " + (end - start) / records + " s");
 		} catch (SQLException e) {
 			e.printStackTrace();
 
